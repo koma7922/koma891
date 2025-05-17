@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Fast Panel</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Orbitron', sans-serif;
+      background: url('https://fs.noorgram.ir/pic/2020/29/_%20%D8%A8%DA%A9%20%DA%AF%D8%B1%D8%A7%D9%86%D8%AF%20%D8%A2%D8%A8%DB%8C%20%D8%A8%D8%A7%20%DA%A9%DB%8C%D9%81%DB%8C%D8%AA%20%D8%A8%D8%A7%D9%84%D8%A7.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .panel {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      padding: 25px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+      backdrop-filter: blur(10px);
+    }
+    h2 {
+      text-align: center;
+      color: #00ffff;
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      font-family: 'Orbitron', sans-serif;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    input, select {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    button {
+      background: #00c853;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #00b34a;
+    }
+    #copyBtn {
+      background: #2962ff;
+    }
+    .output {
+      margin-top: 15px;
+      word-wrap: break-word;
+      font-size: 14px;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 10px auto 0;
+    }
+    textarea {
+      position: absolute;
+      left: -9999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h2>Fast vpn Panel</h2>
+    <input id="name" placeholder="Config Name" />
+    <select id="type">
+      <option value="trojan">Trojan</option>
+      <option value="vless">VLESS</option>
+    </select>
+    <input id="data" placeholder="Data (GB)" type="number" />
+    <input id="days" placeholder="Validity (Days)" type="number" />
+    <button onclick="generateConfig()">Generate</button>
+    <div class="output" id="result"></div>
+    <button id="copyBtn" onclick="copyConfig()" style="display:none;">Copy Config</button>
+    <canvas id="qr" width="200" height="200"></canvas>
+  </div>
+
+  <textarea id="hiddenArea"></textarea>
+
+  <script>
+    const ports = [443, 8443, 2096, 2083];
+    const servers = ["172.66.44.241", "www.speedtest.net", "isbot10-1.pages.dev"];
+    const wsHost = "isbot10-1.pages.dev";
+    const sni = "ISbOt10-1.PagES.dEV";
+    let currentConfig = "";
+
+    function randomWord(length = 5) {
+      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
+
+    function generateRandomPath(ed) {
+      const first = randomWord(5);
+      const middle = Array.from({ length: 20 }, () => randomWord(1)).join('');
+      const digits = Math.floor(1000 + Math.random() * 9000);
+      return `/${first}/${middle}=${digits}?ed=${ed}`;
+    }
+
+    function generateConfig() {
+      const name = document.getElementById("name").value.trim();
+      const type = document.getElementById("type").value;
+      const data = parseInt(document.getElementById("data").value.trim());
+      const days = parseInt(document.getElementById("days").value.trim());
+
+      if (!name || isNaN(data) || isNaN(days)) {
+        alert("Please fill all fields correctly.");
+        return;
+      }
+
+      const ed = data * days;
+      const port = ports[Math.floor(Math.random() * ports.length)];
+      const server = servers[Math.floor(Math.random() * servers.length)];
+
+      let config = "";
+
+      if (type === "trojan") {
+        const path = "/trXKFhyMjGwMBHZsTz?ed=2560";
+        config = `trojan://OrFh8xpga%7Cpn1%24L%3F@${server}:${port}?path=${encodeURIComponent(path)}&security=tls&alpn=http%2F1.1&host=${wsHost}&fp=randomized&type=ws&sni=${sni}#${encodeURIComponent(name)}`;
+      } else {
+        const path = generateRandomPath(ed);
+        config = `vless://5918626b-862d-4884-90a3-f94955f709cf@${server}:${port}?path=${encodeURIComponent(path)}&security=tls&alpn=http%2F1.1&encryption=none&host=${wsHost}&fp=randomized&type=ws&sni=${sni}#${encodeURIComponent(name)}`;
+      }
+
+      currentConfig = config;
+      document.getElementById("result").innerHTML = `<b>Config:</b><br>${config}`;
+      document.getElementById("copyBtn").style.display = "inline-block";
+
+      new QRious({
+        element: document.getElementById("qr"),
+        value: config,
+        size: 200
+      });
+    }
+
+    function copyConfig() {
+      const textarea = document.getElementById("hiddenArea");
+      textarea.value = currentConfig;
+      textarea.select();
+      textarea.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+      alert("Config copied!");
+    }
+  </script>
+</body>
+</html>
